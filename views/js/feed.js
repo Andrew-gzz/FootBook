@@ -145,40 +145,62 @@ export class Feed {
     return `${apiBase}${endpoint}?${q.toString()}`;
   }
 
-  #renderDefault(post) {
-    const avatar = post.avatar_b64
-      ? `data:image/*;base64,${post.avatar_b64}`
-      : `${this.opts.apiBase}/img/default.jpg`;
+#renderDefault(post) {
+  const avatar = post.avatar_b64
+    ? `data:image/*;base64,${post.avatar_b64}`
+    : `${this.opts.apiBase}/img/default.jpg`;
 
-    const wc  = [post.worldcup_name, post.worldcup_year].filter(Boolean).join(' ');
-    const cat = post.category_name || '';
+  const wc  = [post.worldcup_name, post.worldcup_year].filter(Boolean).join(' ');
+  const cat = post.category_name || '';
 
-    const mediaHTML = post.media_b64
-      ? `<img class="img-fluid rounded mb-2" src="data:image/*;base64,${post.media_b64}" alt="Post image">`
-      : '';
+  // --- NUEVO: soporte de imagen o video ---
+  let mediaHTML = '';
 
-    const el = document.createElement('div');
-    el.className = 'card mb-3 shadow-sm';
-    el.innerHTML = `
-      <div class="card-body">
-        <div class="d-flex mb-2 align-items-center">
-          <img src="${avatar}" class="rounded-circle me-2" width="40" height="40" alt="User">
-          <div>
-            <strong>${post.username ?? 'Usuario'}</strong>
-            <span class="text-muted small">en ${wc}</span>
-            <span class="badge bg-secondary ms-2">${cat}</span>
-          </div>
-        </div>
-        ${post.title ? `<h6 class="mb-1">${post.title}</h6>` : ''}
-        <p class="mb-2">${post.description ?? ''}</p>
-        ${mediaHTML}
-        <div>
-          <button class="btn btn-sm btn-outline-success me-2">${post.likes_count ?? 0}</button>
-          <button class="btn btn-sm btn-outline-secondary">${post.comments_count ?? 0}</button>
-        </div>
-      </div>`;
-    return el;
+  if (post.media_b64) {
+    // Si el back manda mime-type o indicador
+    const t = (post.media_type || '').toLowerCase();
+
+    if (t.includes('video') || t === 'video') {
+      mediaHTML = `
+        <video class="w-100 rounded mb-2" controls preload="metadata">
+          <source src="data:video/mp4;base64,${post.media_b64}" type="video/mp4">
+          Tu navegador no soporta video.
+        </video>`;
+    } else {
+      mediaHTML = `
+        <img class="img-fluid rounded mb-2"
+             src="data:image/*;base64,${post.media_b64}"
+             alt="Post media">`;
+    }
   }
+
+  // --- CONTENIDO ORIGINAL ---
+  const el = document.createElement('div');
+  el.className = 'card mb-3 shadow-sm';
+  el.innerHTML = `
+    <div class="card-body">
+      <div class="d-flex mb-2 align-items-center">
+        <img src="${avatar}" class="rounded-circle me-2" width="40" height="40" alt="User">
+        <div>
+          <strong>${post.username ?? 'Usuario'}</strong>
+          <span class="text-muted small">en ${wc}</span>
+          <span class="badge bg-secondary ms-2">${cat}</span>
+        </div>
+      </div>
+
+      ${post.title ? `<h6 class="mb-1">${post.title}</h6>` : ''}
+      <p class="mb-2">${post.description ?? ''}</p>
+
+      ${mediaHTML}
+
+      <div>
+        <button class="btn btn-sm btn-outline-success me-2">${post.likes_count ?? 0}</button>
+        <button class="btn btn-sm btn-outline-secondary">${post.comments_count ?? 0}</button>
+      </div>
+    </div>`;
+  return el;
+}
+
 
   #resetState() {
     this.lastId  = 0;

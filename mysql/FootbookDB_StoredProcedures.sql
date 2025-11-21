@@ -1,85 +1,15 @@
--- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
---
--- Host: 127.0.0.1    Database: footbook_db
--- ------------------------------------------------------
--- Server version	8.0.43
+-- =====================================================
+--  STORED PROCEDURES
+-- =====================================================
+DELIMITER //
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Dumping routines for database 'footbook_db'
---
-/*!50003 DROP FUNCTION IF EXISTS `fn_exists_post_active` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` FUNCTION `fn_exists_post_active`(p_post_id BIGINT) RETURNS tinyint
-    READS SQL DATA
-    DETERMINISTIC
-RETURN EXISTS(
-  SELECT 1 FROM posts
-  WHERE id = p_post_id AND status = 1
-) ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP FUNCTION IF EXISTS `fn_exists_user_active` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` FUNCTION `fn_exists_user_active`(p_user_id BIGINT) RETURNS tinyint
-    READS SQL DATA
-    DETERMINISTIC
-RETURN EXISTS(
-  SELECT 1 FROM Users
-  WHERE id = p_user_id AND status = 1
-) ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_approve_post` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_approve_post`(
+CREATE PROCEDURE sp_approve_post(
     IN p_post_id     BIGINT,
     IN p_is_approved TINYINT
 )
 BEGIN
     DECLARE v_exists INT DEFAULT 0;
 
-    /* ===== Validaciones ===== */
     IF p_post_id IS NULL OR p_post_id <= 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_post_id inválido';
     END IF;
@@ -96,46 +26,28 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El post no existe';
     END IF;
 
-    /* ===== Update ===== */
     START TRANSACTION;
 
     UPDATE posts
-       SET approved   = p_is_approved,
+       SET approved    = p_is_approved,
            approved_at = CASE WHEN p_is_approved = 1 THEN CURRENT_TIMESTAMP() ELSE NULL END
      WHERE id = p_post_id;
 
-    /* Devuelve el estado final */
-    SELECT id,
-           approved,
-           approved_at
+    SELECT id, approved, approved_at
       FROM posts
      WHERE id = p_post_id;
 
     COMMIT;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_category_update` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_category_update`(
+END;
+//
+
+CREATE PROCEDURE sp_category_update(
     IN p_category_id INT,
     IN p_new_name    VARCHAR(32)
 )
 BEGIN
     DECLARE v_newname VARCHAR(32);
 
-    -- Saneado básico
     SET v_newname = TRIM(p_new_name);
 
     IF p_category_id IS NULL OR p_category_id <= 0 THEN
@@ -150,8 +62,10 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre excede 32 caracteres';
     END IF;
 
-    -- Evitar duplicados (si tu tabla lo permite)
-    IF EXISTS(SELECT 1 FROM categories c WHERE c.name = v_newname AND c.id <> p_category_id) THEN
+    IF EXISTS(
+        SELECT 1 FROM categories c
+        WHERE c.name = v_newname AND c.id <> p_category_id
+    ) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ya existe una categoría con ese nombre';
     END IF;
 
@@ -162,88 +76,51 @@ BEGIN
      WHERE id   = p_category_id;
 
     IF ROW_COUNT() = 0 THEN
-        -- No afectó filas (id inexistente o nombre igual)
         ROLLBACK;
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se actualizó la categoría (id inexistente o sin cambios)';
     END IF;
 
-    -- Devuelve el estado final
     SELECT id, name
       FROM categories
      WHERE id = p_category_id;
 
     COMMIT;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_create_category` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_category`(
+END;
+//
+
+CREATE PROCEDURE sp_create_category(
     IN p_name VARCHAR(255)
 )
 BEGIN
     DECLARE v_name   VARCHAR(255);
     DECLARE v_exists INT DEFAULT 0;
 
-    -- Normaliza
     SET v_name = TRIM(p_name);
 
-    -- Requerido
     IF v_name IS NULL OR v_name = '' THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'El nombre de la categoría es requerido';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre de la categoría es requerido';
     END IF;
 
-    -- Longitud
     IF CHAR_LENGTH(v_name) > 32 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'El nombre de la categoría excede 32 caracteres (máx 32)';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre excede 32 caracteres (máx 32)';
     END IF;
 
-    -- Duplicados (case-insensitive)
     SELECT COUNT(*) INTO v_exists
       FROM categories
      WHERE LOWER(name) = LOWER(v_name);
 
     IF v_exists > 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'La categoría ya existe';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría ya existe';
     END IF;
 
-    -- Inserción
     INSERT INTO categories (name)
     VALUES (v_name);
 
-    -- Retorna el id creado
     SELECT LAST_INSERT_ID() AS category_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_create_comment` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_comment`(
+END;
+//
+
+CREATE PROCEDURE sp_create_comment(
   IN p_post_id BIGINT,
   IN p_user_id BIGINT,
   IN p_content TEXT
@@ -255,7 +132,6 @@ BEGIN
     RESIGNAL;
   END;
 
-  /* Validaciones */
   IF p_post_id IS NULL OR p_post_id <= 0 THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_post_id inválido';
   END IF;
@@ -282,61 +158,44 @@ BEGIN
   VALUES (p_post_id, p_user_id, TRIM(p_content), 1, CURRENT_TIMESTAMP);
 
   SELECT c.id, c.post_id, c.user_id, c.content, c.status, c.created_at
-  FROM comments c
-  WHERE c.id = LAST_INSERT_ID();
+    FROM comments c
+   WHERE c.id = LAST_INSERT_ID();
 
   COMMIT;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_create_post` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_post`(
-    IN p_user_id     BIGINT,	   -- NOTNULL
-    IN p_category_id INT,          -- NOTNULL
-    IN p_worldcup_id INT,          -- NOTNULL
-    IN p_team        VARCHAR(32),  -- equipo (opcional),
-    IN p_title		 VARCHAR(64),  -- NOTNULL
-    IN p_description TEXT,         -- NOTNULL
-    IN p_media       LONGBLOB      -- imagen/video (opcional)
+END;
+//
+
+CREATE PROCEDURE sp_create_post(
+    IN p_user_id     BIGINT,
+    IN p_category_id INT,
+    IN p_worldcup_id INT,
+    IN p_team        VARCHAR(32),
+    IN p_title       VARCHAR(64),
+    IN p_description TEXT,
+    IN p_media       LONGBLOB
 )
 BEGIN
-    DECLARE v_user    INT DEFAULT 0;
-    DECLARE v_cat     INT DEFAULT 0;
-    DECLARE v_wc      INT DEFAULT 0;
+    DECLARE v_user INT DEFAULT 0;
+    DECLARE v_cat  INT DEFAULT 0;
+    DECLARE v_wc   INT DEFAULT 0;
 
-    /* ===== Validaciones básicas ===== */
     IF p_user_id IS NULL OR p_user_id <= 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_user_id es requerido';
     END IF;
-    
     IF p_category_id IS NULL OR p_category_id <= 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_category_id es requerido';
     END IF;
-    
-	IF p_worldcup_id IS NULL OR p_worldcup_id <= 0 THEN
+    IF p_worldcup_id IS NULL OR p_worldcup_id <= 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_worldcup_id es requerido';
     END IF;
-    
-	IF p_description IS NULL OR CHAR_LENGTH(TRIM(p_description)) = 0 THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_description es requerido';
-	END IF;
-    
-	IF p_title IS NULL OR CHAR_LENGTH(TRIM(p_title)) = 0 OR CHAR_LENGTH(TRIM(p_title)) > 64 THEN
-		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'campo p_title invalido';
-	END IF;
-    
+    IF p_description IS NULL OR CHAR_LENGTH(TRIM(p_description)) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_description es requerido';
+    END IF;
+    IF p_title IS NULL OR CHAR_LENGTH(TRIM(p_title)) = 0
+       OR CHAR_LENGTH(TRIM(p_title)) > 64 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'campo p_title invalido';
+    END IF;
+
     SELECT COUNT(*) INTO v_user
       FROM Users
      WHERE id = p_user_id AND status = 1;
@@ -344,81 +203,44 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o está inactivo';
     END IF;
 
-    IF p_category_id IS NOT NULL THEN
-        SELECT COUNT(*) INTO v_cat
-          FROM categories
-         WHERE id = p_category_id;
-        IF v_cat = 0 THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría no existe';
-        END IF;
+    SELECT COUNT(*) INTO v_cat
+      FROM categories
+     WHERE id = p_category_id;
+    IF v_cat = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría no existe';
     END IF;
 
-    IF p_worldcup_id IS NOT NULL THEN
-        SELECT COUNT(*) INTO v_wc
-          FROM worldcups
-         WHERE id = p_worldcup_id;
-        IF v_wc = 0 THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El mundial (worldcup) no existe';
-        END IF;
-    END IF;
-
-    IF p_description IS NULL OR CHAR_LENGTH(TRIM(p_description)) = 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La descripción es requerida';
+    SELECT COUNT(*) INTO v_wc
+      FROM worldcups
+     WHERE id = p_worldcup_id;
+    IF v_wc = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El mundial (worldcup) no existe';
     END IF;
 
     IF p_team IS NOT NULL AND CHAR_LENGTH(p_team) > 32 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El campo team excede 32 caracteres';
     END IF;
 
-    /* ===== Inserción ===== */
     START TRANSACTION;
 
     INSERT INTO posts(
-        user_id,
-        category_id,
-        worldcup_id,
-        team,
-        title,
-        description,
-        media,
-        approved,
-        status,
-        created_at
+        user_id, category_id, worldcup_id,
+        team, title, description, media,
+        approved, status, created_at
     )
     VALUES(
-        p_user_id,
-        p_category_id,
-        p_worldcup_id,
-        p_team,
-        p_title,
-        p_description,
-        p_media,
-        0,                    -- pendiente de aprobación
-        1,                    -- activo
-        CURRENT_TIMESTAMP()
+        p_user_id, p_category_id, p_worldcup_id,
+        p_team, p_title, p_description, p_media,
+        0, 1, CURRENT_TIMESTAMP()
     );
 
-    /*Devuelve el id creado*/
     SELECT LAST_INSERT_ID() AS post_id;
 
     COMMIT;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_create_user` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_user`(
+END;
+//
+
+CREATE PROCEDURE sp_create_user(
     IN p_admin TINYINT(1),
     IN p_username VARCHAR(32),
     IN p_email VARCHAR(64),
@@ -432,72 +254,43 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_user`(
 )
 BEGIN
     INSERT INTO Users (
-        admin, username, email, password, fullname, birthday, gender, 
+        admin, username, email, password, fullname, birthday, gender,
         birth_country, country, avatar, status, created_at
     )
     VALUES (
         p_admin, p_username, p_email, p_password, p_fullname, p_birthday, p_gender,
         p_birth_country, p_country, p_avatar, 1, CURRENT_TIMESTAMP
     );
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_create_worldcup` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_worldcup`(
-	IN p_name VARCHAR(64),
-	IN p_country VARCHAR(32),
-	IN p_year INT,
-	IN p_description TEXT,
-	IN p_banner LONGBLOB,
-	IN p_status TINYINT(1)
+END;
+//
+
+CREATE PROCEDURE sp_create_worldcup(
+    IN p_name        VARCHAR(64),
+    IN p_country     VARCHAR(32),
+    IN p_year        INT,
+    IN p_description TEXT,
+    IN p_banner      LONGBLOB,
+    IN p_status      TINYINT(1)
 )
 BEGIN
-	INSERT INTO WorldCups (name, country, year, description, banner, status)
-	VALUES (p_name, p_country, p_year, p_description, p_banner, p_status);
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_delete_category` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_delete_category`(IN p_id INT)
+    INSERT INTO WorldCups (name, country, year, description, banner, status)
+    VALUES (p_name, p_country, p_year, p_description, p_banner, p_status);
+END;
+//
+
+CREATE PROCEDURE sp_delete_category(IN p_id INT)
 BEGIN
-    DECLARE v_exists INT DEFAULT 0;
+    DECLARE v_exists      INT DEFAULT 0;
     DECLARE v_posts_count INT DEFAULT 0;
 
-    -- Verificar que existe
     SELECT COUNT(*) INTO v_exists
       FROM categories
      WHERE id = p_id;
 
     IF v_exists = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'La categoría no existe';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría no existe';
     END IF;
 
-    -- Verificar si tiene posts asociados
     SELECT COUNT(*) INTO v_posts_count
       FROM posts
      WHERE category_id = p_id
@@ -505,45 +298,38 @@ BEGIN
 
     IF v_posts_count > 0 THEN
         SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'No se puede eliminar: hay publicaciones asociadas a esta categoría';
+          SET MESSAGE_TEXT = 'No se puede eliminar: hay publicaciones asociadas a esta categoría';
     END IF;
 
-    -- Soft delete
     UPDATE categories
        SET status = 0
      WHERE id = p_id;
 
-    -- Confirmar eliminación
     SELECT id, name, status
       FROM categories
      WHERE id = p_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_get_feed` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_feed`(
-    IN p_user_id     BIGINT,     -- 0 o NULL => anónimo
-    IN p_after_id    BIGINT,     -- cursor: último id recibido; NULL/0 => primera página
-    IN p_limit       INT,        -- tamaño de página
-    IN p_category_id INT,        -- filtro opcional; NULL/0 => todos
-    IN p_worldcup_id INT         -- filtro opcional; NULL/0 => todos
+END;
+//
+
+CREATE PROCEDURE sp_get_feed(
+    IN p_user_id     BIGINT,
+    IN p_after_id    BIGINT,
+    IN p_limit       INT,
+    IN p_category_id INT,
+    IN p_worldcup_id INT,
+    IN p_order       VARCHAR(32),
+    IN p_search_text VARCHAR(255)
 )
 BEGIN
     IF p_limit IS NULL OR p_limit <= 0 THEN
         SET p_limit = 10;
     END IF;
+
+    IF p_order IS NULL OR p_order = '' THEN
+        SET p_order = 'cronologico';
+    END IF;
+
+    SET p_search_text = TRIM(COALESCE(p_search_text, ''));
 
     SELECT 
         p.id, p.title, p.team, p.description, p.created_at, p.approved_at,
@@ -555,8 +341,10 @@ BEGIN
         (SELECT COUNT(*) FROM Comments  co WHERE co.post_id = p.id AND co.status = 1) AS comments_count,
         CASE 
             WHEN p_user_id IS NULL OR p_user_id = 0 THEN 0
-            ELSE EXISTS(SELECT 1 FROM PostLikes x 
-                        WHERE x.post_id = p.id AND x.user_id = p_user_id AND x.status = 1)
+            ELSE EXISTS(
+                SELECT 1 FROM PostLikes x 
+                WHERE x.post_id = p.id AND x.user_id = p_user_id AND x.status = 1
+            )
         END AS liked_by_me
     FROM Posts p
     JOIN Users      u ON u.id = p.user_id     AND u.status = 1
@@ -568,50 +356,40 @@ BEGIN
       AND (p_category_id IS NULL OR p_category_id = 0 OR p.category_id = p_category_id)
       AND (p_worldcup_id IS NULL OR p_worldcup_id = 0 OR p.worldcup_id = p_worldcup_id)
       AND (p_user_id     IS NULL OR p_user_id     = 0 OR p.user_id = p_user_id)
-    ORDER BY p.id DESC
+      AND (
+        p_search_text = '' 
+        OR p.title       LIKE CONCAT('%', p_search_text, '%')
+        OR p.description LIKE CONCAT('%', p_search_text, '%')
+        OR p.team        LIKE CONCAT('%', p_search_text, '%')
+        OR u.username    LIKE CONCAT('%', p_search_text, '%')
+        OR c.name        LIKE CONCAT('%', p_search_text, '%')
+        OR w.name        LIKE CONCAT('%', p_search_text, '%')
+      )
+    ORDER BY 
+        CASE 
+            WHEN p_order = 'cronologico' THEN p.id
+            WHEN p_order = 'likes'       THEN likes_count
+            WHEN p_order = 'comentarios' THEN comments_count
+        END DESC,
+        CASE WHEN p_order = 'pais' THEN w.country END ASC,
+        p.id DESC
     LIMIT p_limit;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_get_user_for_login` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_user_for_login`(IN p_identity VARCHAR(64))
+END;
+//
+
+CREATE PROCEDURE sp_get_user_for_login(IN p_identity VARCHAR(64))
 BEGIN
     SELECT 
         id, admin, username, email, password, fullname, birthday, gender,
         birth_country, country, status, created_at
     FROM Users
-    WHERE (username = p_identity)
+    WHERE username = p_identity
       AND status = 1
     LIMIT 1;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_soft_delete_category` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_soft_delete_category`(IN p_id INT)
+END;
+//
+
+CREATE PROCEDURE sp_soft_delete_category(IN p_id INT)
 BEGIN
     DECLARE v_exists INT DEFAULT 0;
 
@@ -627,33 +405,18 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría no existe';
     END IF;
 
-    -- Soft delete
     UPDATE categories
        SET status = 0
      WHERE id = p_id
        AND status <> 0;
 
-    -- Resumen
     SELECT id, name, status
       FROM categories
      WHERE id = p_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_soft_delete_user` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_soft_delete_user`(IN p_user_id BIGINT)
+END;
+//
+
+CREATE PROCEDURE sp_soft_delete_user(IN p_user_id BIGINT)
 BEGIN
   DECLARE v_exists INT DEFAULT 0;
 
@@ -661,10 +424,9 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'p_user_id inválido';
   END IF;
 
-  -- ¿Existe y está activo?
   SELECT COUNT(*) INTO v_exists
-  FROM Users
-  WHERE id = p_user_id AND status = 1;
+    FROM Users
+   WHERE id = p_user_id AND status = 1;
 
   IF v_exists = 0 THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Usuario no encontrado o ya inactivo';
@@ -684,152 +446,197 @@ BEGIN
 
   COMMIT;
 
-  -- Resumen
-  SELECT p_user_id AS user_id, 0 AS new_status, 'Usuario dado de baja (soft delete)' AS message;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_update_category` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_category`(
-    IN p_id INT,
+  SELECT p_user_id AS user_id, 0 AS new_status,
+         'Usuario dado de baja (soft delete)' AS message;
+END;
+//
+
+CREATE PROCEDURE sp_soft_delete_worldcup(IN p_id INT)
+BEGIN
+    UPDATE WorldCups
+       SET status = 0
+     WHERE id = p_id;
+END;
+//
+
+CREATE PROCEDURE sp_toggle_post_like(
+    IN p_user_id BIGINT,
+    IN p_post_id BIGINT
+)
+BEGIN
+    DECLARE v_post_exists   INT DEFAULT 0;
+    DECLARE v_user_exists   INT DEFAULT 0;
+    DECLARE v_like_id       BIGINT;
+    DECLARE v_current_status TINYINT;
+
+    IF p_user_id IS NULL OR p_user_id <= 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'user_id inválido';
+    END IF;
+    IF p_post_id IS NULL OR p_post_id <= 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'post_id inválido';
+    END IF;
+
+    SELECT COUNT(*) INTO v_post_exists
+      FROM posts
+     WHERE id = p_post_id AND status = 1 AND approved = 1;
+
+    IF v_post_exists = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El post no existe o está inactivo';
+    END IF;
+
+    SELECT COUNT(*) INTO v_user_exists
+      FROM users
+     WHERE id = p_user_id AND status = 1;
+
+    IF v_user_exists = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o está inactivo';
+    END IF;
+
+    START TRANSACTION;
+
+    SELECT id, status INTO v_like_id, v_current_status
+      FROM postlikes
+     WHERE user_id = p_user_id 
+       AND post_id = p_post_id
+     LIMIT 1;
+
+    IF v_like_id IS NOT NULL THEN
+        UPDATE postlikes
+           SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END
+         WHERE id = v_like_id;
+
+        SELECT 
+            id, user_id, post_id, status, created_at,
+            (SELECT COUNT(*) FROM postlikes
+              WHERE post_id = p_post_id AND status = 1) AS total_likes
+        FROM postlikes
+        WHERE id = v_like_id;
+    ELSE
+        INSERT INTO postlikes (user_id, post_id, status, created_at)
+        VALUES (p_user_id, p_post_id, 1, CURRENT_TIMESTAMP);
+
+        SET v_like_id = LAST_INSERT_ID();
+
+        SELECT 
+            id, user_id, post_id, status, created_at,
+            (SELECT COUNT(*) FROM postlikes
+              WHERE post_id = p_post_id AND status = 1) AS total_likes
+        FROM postlikes
+        WHERE id = v_like_id;
+    END IF;
+
+    COMMIT;
+END;
+//
+
+CREATE PROCEDURE sp_update_category(
+    IN p_id   INT,
     IN p_name VARCHAR(32)
 )
 BEGIN
-    DECLARE v_name VARCHAR(32);
+    DECLARE v_name   VARCHAR(32);
     DECLARE v_exists INT DEFAULT 0;
 
-    -- Validar que el ID existe
     SELECT COUNT(*) INTO v_exists
       FROM categories
      WHERE id = p_id;
 
     IF v_exists = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'La categoría no existe';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La categoría no existe';
     END IF;
 
-    -- Normalizar nombre
     SET v_name = TRIM(p_name);
 
-    -- Validar nombre
     IF v_name IS NULL OR v_name = '' THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'El nombre de la categoría es requerido';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre de la categoría es requerido';
     END IF;
 
     IF CHAR_LENGTH(v_name) > 32 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'El nombre de la categoría excede 32 caracteres';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El nombre excede 32 caracteres';
     END IF;
 
-    -- Verificar duplicados (excluyendo el mismo registro)
     SELECT COUNT(*) INTO v_exists
       FROM categories
      WHERE LOWER(name) = LOWER(v_name)
-       AND id != p_id;
+       AND id <> p_id;
 
     IF v_exists > 0 THEN
         SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Ya existe otra categoría con ese nombre';
+          SET MESSAGE_TEXT = 'Ya existe otra categoría con ese nombre';
     END IF;
 
-    -- Actualizar
     UPDATE categories
        SET name = v_name
      WHERE id = p_id;
 
-    -- Retornar datos actualizados
     SELECT id, name
       FROM categories
      WHERE id = p_id;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `sp_update_user_profile` */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_update_user_profile`(
-    IN p_id BIGINT,
-    IN p_fullname VARCHAR(255),
-    IN p_username VARCHAR(32),
-    IN p_email VARCHAR(64),
-    IN p_birthday DATE,
-    IN p_gender INT,
+END;
+//
+
+CREATE PROCEDURE sp_update_user_profile(
+    IN p_id           BIGINT,
+    IN p_fullname     VARCHAR(255),
+    IN p_username     VARCHAR(32),
+    IN p_email        VARCHAR(64),
+    IN p_birthday     DATE,
+    IN p_gender       INT,
     IN p_birth_country VARCHAR(32),
-    IN p_country VARCHAR(32),
-    IN p_avatar LONGBLOB,
-    IN p_password VARCHAR(255)
+    IN p_country      VARCHAR(32),
+    IN p_avatar       LONGBLOB,
+    IN p_password     VARCHAR(255)
 )
 BEGIN
     DECLARE v_exists INT DEFAULT 0;
 
     SELECT COUNT(*) INTO v_exists
-    FROM Users
-    WHERE id = p_id AND status = 1;
+      FROM Users
+     WHERE id = p_id AND status = 1;
 
     IF v_exists = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Usuario no encontrado';
     END IF;
 
-    -- Actualizar solo los campos que no son NULL
     UPDATE Users
-    SET
-        fullname = COALESCE(p_fullname, fullname),
-        username = COALESCE(p_username, username),
-        email = COALESCE(p_email, email),
-        birthday = COALESCE(p_birthday, birthday),
-        gender = COALESCE(p_gender, gender),
-        birth_country = COALESCE(p_birth_country, birth_country),
-        country = COALESCE(p_country, country),
-        avatar = COALESCE(p_avatar, avatar),
-        password = COALESCE(p_password, password)
-    WHERE id = p_id;
+       SET fullname      = COALESCE(p_fullname, fullname),
+           username      = COALESCE(p_username, username),
+           email         = COALESCE(p_email, email),
+           birthday      = COALESCE(p_birthday, birthday),
+           gender        = COALESCE(p_gender, gender),
+           birth_country = COALESCE(p_birth_country, birth_country),
+           country       = COALESCE(p_country, country),
+           avatar        = COALESCE(p_avatar, avatar),
+           password      = COALESCE(p_password, password)
+     WHERE id = p_id;
 
-    -- Retornar confirmación
     SELECT 
-        id, 
-        username, 
-        email, 
-        fullname,
+        id, username, email, fullname,
         'Perfil actualizado correctamente' AS message
     FROM Users
     WHERE id = p_id;
-END ;;
+END;
+//
+
+CREATE PROCEDURE sp_update_worldcup(
+    IN p_id          INT,
+    IN p_name        VARCHAR(64),
+    IN p_country     VARCHAR(32),
+    IN p_year        INT,
+    IN p_description TEXT,
+    IN p_banner      LONGBLOB,
+    IN p_status      TINYINT(1)
+)
+BEGIN
+    UPDATE WorldCups
+       SET name        = p_name,
+           country     = p_country,
+           year        = p_year,
+           description = p_description,
+           banner      = p_banner,
+           status      = p_status
+     WHERE id = p_id;
+END;
+//
+
 DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2025-11-10 13:34:57

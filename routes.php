@@ -62,7 +62,7 @@ $router->get('/FootBook/api/comments',                 'CommentController@index'
 
 /* ===== WorldCups ===== */
 //$router->get('/FootBook/api/worldcups',                 'WorldCupApi@index');
-//$router->get('/FootBook/api/worldcups/light',           'WorldCupApi@lightindex');
+$router->get('/FootBook/api/worldcups/light',           'WorldCupApi@lightindex');
 //$router->get('/FootBook/api/worldcups/:id',             'WorldCupApi@show');
 
 

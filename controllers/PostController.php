@@ -133,27 +133,27 @@ class PostController {
         }
     }
     public function feed(): void
-{
-    try {
-        // Query params
-        $after      = isset($_GET['after'])       ? (int)$_GET['after']       : 0;
-        $limit      = isset($_GET['limit'])       ? (int)$_GET['limit']       : 10;
-        $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
-        $worldcupId = isset($_GET['worldcup_id']) ? (int)$_GET['worldcup_id'] : 0;
-        $order      = isset($_GET['order'])       ? (string)$_GET['order']    : 'cronologico';
-        $searchText = isset($_GET['q'])           ? trim((string)$_GET['q'])  : ''; // 👈 NUEVO
+    {
+        try {
+            // Query params
+            $after      = isset($_GET['after'])       ? (int)$_GET['after']       : 0;
+            $limit      = isset($_GET['limit'])       ? (int)$_GET['limit']       : 10;
+            $categoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+            $worldcupId = isset($_GET['worldcup_id']) ? (int)$_GET['worldcup_id'] : 0;
+            $order      = isset($_GET['order'])       ? (string)$_GET['order']    : 'cronologico';
+            $searchText = isset($_GET['q'])           ? trim((string)$_GET['q'])  : ''; 
 
-        // Si viene user_id en el querystring (perfil), úsalo para filtrar por autor
-        // Si no viene, queda 0 => feed general
-        $authorId   = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+            // Si viene user_id en el querystring (perfil), úsalo para filtrar por autor
+            // Si no viene, queda 0 => feed general
+            $authorId   = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 
-        // Llama al model (pasa parámetros exactamente en el orden del SP)
-        $rows = $this->model->get_feed($authorId, $after, $limit, $categoryId, $worldcupId, $order, $searchText);
+            // Llama al model (pasa parámetros exactamente en el orden del SP)
+            $rows = $this->model->get_feed($authorId, $after, $limit, $categoryId, $worldcupId, $order, $searchText);
 
-        $this->json(['ok' => true, 'data' => $rows]);
-    } catch (\Throwable $e) {
-        $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            $this->json(['ok' => true, 'data' => $rows]);
+        } catch (\Throwable $e) {
+            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
     }
-}
 
 }
